@@ -1,0 +1,41 @@
+{
+    "name": "工作居住证自动报名",
+    "version": "2.0.0",
+    "manifest_version": 2,
+    "description": "工作居住证自动报名",
+    "icons": {
+        "16": "icon16.png",
+        "48": "icon48.png"
+    },
+    "browser_action": {
+        "default_icon": "icon16.png",
+        "default_title": "工作居住证自动报名"
+    },
+    /*
+    "page_action": {
+        "default_icon": "icons/foo.png", // optional 
+        "default_title": "Do action",    // optional; shown in tooltip 
+        "default_popup": "popup.html"    // optional 
+    },
+    */
+    "content_scripts": [{
+        "matches": ["http://bm.qunar.it/*"],
+        "js": ["main.js"],
+        "run_at": "document_start"
+    }],
+    "background": {
+        "persistent": true,
+        "scripts": [
+            "background.js"
+        ]
+    },
+    "permissions": [
+        "tabs",
+        "http://*/*",
+        "https://*/*",
+        "background",
+        "cookies",
+        "unlimitedStorage",
+        "notifications"
+    ]
+}
