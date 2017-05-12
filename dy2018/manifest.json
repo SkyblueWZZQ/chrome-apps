@@ -1,0 +1,16 @@
+{
+	"name": "dy2018",
+	"version": "1.0",
+	"manifest_version": 2,
+	"content_scripts": [{
+		"matches": ["http://www.dy2018.com/*", "http://*.xiaopian.com/*"],
+		"js": ["content.js"],
+		"run_at": "document_end"
+	}],
+	"browser_action": {
+
+	},
+	"background": {
+		"scripts": ["background.js"]
+	}
+}
