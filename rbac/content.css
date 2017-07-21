@@ -1,0 +1,23 @@
+.chrome-app-rbac {
+  position: absolute;
+  top: 88px;
+  left: 50%;
+  right: 10px;
+}
+.chrome-app-rbac .tools {
+  text-align: right;
+}
+
+.chrome-app-rbac .rbac-export, .chrome-app-rbac .rbac-import, .chrome-app-rbac .rbac-copy {
+  padding: 4px 10px;
+  margin-left: 6px;
+}
+
+.chrome-app-rbac .rbac-tree {
+  margin-top: 10px;
+}
+
+.chrome-app-rbac .rbac-tree textarea {
+  width: 100%;
+  height: 300px;
+}
