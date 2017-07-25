@@ -1,12 +1,12 @@
 if (/[&?]appSource=([^&]+)/.exec(location.search)) {
   var appSource = RegExp.$1;
-
+  var nodeId = 0;
   var wrapper = document.createElement('div');
   wrapper.className = 'chrome-app-rbac';
   wrapper.style.display = 'none'; // 由 browser_action 控制显示隐藏
   wrapper.innerHTML = `
     <div class="tools">
-      <span class="app-source">项目：${appSource}</span>
+      <span class="app-source">项目：${appSource} node-id: <span class="node-id">${nodeId}</span></span>
       <button class="rbac-export">1. 导出权限</button>
       <button class="rbac-copy">2. 复制</button>
       <button class="rbac-import">3. 导入权限</button>
@@ -31,6 +31,14 @@ if (/[&?]appSource=([^&]+)/.exec(location.search)) {
     document.execCommand('copy');
   }
 
+  document.querySelector('.ui-tree-node').onclick = function (e) {
+    var selectedNode = document.querySelector('.curSelectedNode a[node-id]');
+    if (selectedNode) {
+      nodeId = selectedNode.getAttribute('node-id');
+      document.querySelector('.app-source .node-id').innerHTML = nodeId;
+    }
+  }
+
   var input = document.querySelector('.chrome-app-rbac .rbac-tree textarea');
 
   var RBAC = {
@@ -45,9 +53,9 @@ if (/[&?]appSource=([^&]+)/.exec(location.search)) {
         body: JSON.stringify(data),
       }).then(response => response.json())
     },
-    importRbacItem(item, parentItem = { id: 0 }, previousItem = { sort: -1 }) {
+    importRbacItem(item, parentItem = { id: nodeId }, previousItem = { sort: -1 }) {
       const url = '/rbac/web/uri/save/v1';
-      this.request(url, {
+      return this.request(url, {
         id: "",
         treeCode: "",
         appSource,
@@ -58,39 +66,50 @@ if (/[&?]appSource=([^&]+)/.exec(location.search)) {
         desc: item.desc,
         sort: previousItem.sort + 1,
       }).then(res => {
-        // 添加子节点
-        this.importRbacList(item.childList, res.data);
-
-        // 添加 next 节点
-        if (item.nextItem) {
-          this.importRbacItem(item.nextItem, parentItem, res.data);
+        if (res.ret) {
+          // 添加子节点
+          return this.importRbacList(item.childList, res.data).then(
+            // 添加 next 节点
+            () => item.nextItem ? this.importRbacItem(item.nextItem, parentItem, res.data) : Promise.resolve()
+          );
+        } else {
+          return Promise.reject(res.msg);
         }
       })
     },
     importRbacList(childList, parentItem) {
-      if (childList.length) {
-        childList.forEach((item, index) => {
-          if (index > 0) {
-            childList[index - 1].nextItem = item;
-          }
-        });
-        this.importRbacItem(childList[0], parentItem);
-      }
+      childList.forEach((item, index) => {
+        if (index > 0) {
+          childList[index - 1].nextItem = item;
+        }
+      });
+      return childList.length ? this.importRbacItem(childList[0], parentItem) : Promise.resolve();
     },
     import(childList) {
       try {
         var res = JSON.parse(input.value);
-        this.importRbacList(res.data);
+        this.exportRbac().then(ret => {
+          // 导入前暂存数据，误操作恢复
+          localStorage.setItem(`before_import_rbac_tree_${appSource}`, JSON.stringify(ret));
+          return this.importRbacList(res.data).then(() => {
+            alert('导入成功！');
+            location.reload(true)
+          }).catch(e => alert(`导入异常: ${e}`));
+        });
       } catch (e) {
-        alert(`权限数据解析错误 ${e}`);
+        alert(`权限数据解析错误: ${e}`);
       }
     },
-    export() {
-      // 查询权限树
-      this.request('/rbac/web/uri/queryTree/v1', {
-        id: 0,
+    // 查询权限树
+    exportRbac() {
+      return this.request('/rbac/web/uri/queryTree/v1', {
+        id: nodeId,
         appSource,
-      }).then(res => {
+      });
+    },
+    export() {
+      this.exportRbac().then(res => {
+        localStorage.setItem(`export_rbac_tree_${appSource}`, JSON.stringify(res));
         input.value = JSON.stringify(res, null, 4);
       });
     },
