@@ -7,9 +7,10 @@ if (/[&?]appSource=([^&]+)/.exec(location.search)) {
   wrapper.innerHTML = `
     <div class="tools">
       <span class="app-source">项目：${appSource} node-id: <span class="node-id">${nodeId}</span></span>
-      <button class="rbac-export">1. 导出权限</button>
+      <button class="rbac-export">1. 导出</button>
       <button class="rbac-copy">2. 复制</button>
-      <button class="rbac-import">3. 导入权限</button>
+      <button class="rbac-diff">3. 比较</button>
+      <button class="rbac-import">3. 导入</button>
     </div>
     <div class="rbac-tree">
       <textarea></textarea>
@@ -21,14 +22,18 @@ if (/[&?]appSource=([^&]+)/.exec(location.search)) {
     RBAC.export();
   }
 
-  document.querySelector('.chrome-app-rbac .rbac-import').onclick = function () {
-    RBAC.import();
-  }
-
   document.querySelector('.chrome-app-rbac .rbac-copy').onclick = function () {
     input.focus();
     input.select();
     document.execCommand('copy');
+  }
+
+  document.querySelector('.chrome-app-rbac .rbac-diff').onclick = function () {
+    RBAC.diff();
+  }
+
+  document.querySelector('.chrome-app-rbac .rbac-import').onclick = function () {
+    RBAC.import();
   }
 
   document.querySelector('.ui-tree-node').onclick = function (e) {
@@ -85,20 +90,62 @@ if (/[&?]appSource=([^&]+)/.exec(location.search)) {
       });
       return childList.length ? this.importRbacItem(childList[0], parentItem) : Promise.resolve();
     },
-    import(childList) {
+    getRbacInput() {
       try {
         var res = JSON.parse(input.value);
-        this.exportRbac().then(ret => {
-          // 导入前暂存数据，误操作恢复
-          localStorage.setItem(`before_import_rbac_tree_${appSource}`, JSON.stringify(ret));
-          return this.importRbacList(res.data).then(() => {
-            alert('导入成功！');
-            location.reload(true)
-          }).catch(e => alert(`导入异常: ${e}`));
-        });
       } catch (e) {
         alert(`权限数据解析错误: ${e}`);
       }
+      return res;
+    },
+    rbacTreeToMap(res) {
+      var map = {};
+      function processList(list, parentNames = []) {
+        for (var i = 0; i < list.length; i++) {
+          var item = list[i];
+          var treeName = parentNames.slice();
+          treeName.push(item.name);
+          if (item.childList.length > 0) {
+            processList(item.childList, treeName);
+          }
+          item.childList = [];
+          item.treeName = treeName.join('/');
+          debugger
+          map[item.path] = item;
+        }
+      }
+      processList(res.data);
+      return map;
+    },
+    diff() {
+      this.exportRbac().then(ret => {
+        var oldRbacMap = this.rbacTreeToMap(ret);
+        var newRbacMap = this.rbacTreeToMap(this.getRbacInput());
+        var diffList = [];
+        Object.keys(oldRbacMap).forEach(url => {
+          if (!newRbacMap[url]) {
+            diffList.push(oldRbacMap[url]);
+          }
+        })
+        if (diffList.length > 0) {
+          localStorage.setItem(`diff_rbac_tree_${appSource}`, JSON.stringify(diffList));
+          var diffUrlList = diffList.map(item => (item.path + ' ' + item.treeName));
+          alert(`比较结果：会丢失 ${diffUrlList.length} 项权限\n${diffUrlList.join('\n')}`);
+        } else {
+          alert(`比较结果：无`);
+        }
+      }).catch(e => alert(`导出异常: ${e}`))
+    },
+    import(childList) {
+      var res = this.getRbacInput();
+      this.exportRbac().then(ret => {
+        // 导入前暂存数据，误操作恢复
+        localStorage.setItem(`before_import_rbac_tree_${appSource}`, JSON.stringify(ret));
+        return this.importRbacList(res.data).then(() => {
+          alert('导入成功！');
+          location.reload(true)
+        }).catch(e => alert(`导入异常: ${e}`));
+      }).catch(e => alert(`导出异常 ${e}`));
     },
     // 查询权限树
     exportRbac() {

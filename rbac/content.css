@@ -1,14 +1,17 @@
 .chrome-app-rbac {
   position: absolute;
   top: 88px;
-  left: 50%;
+  left: 40%;
   right: 10px;
 }
 .chrome-app-rbac .tools {
   text-align: right;
 }
 
-.chrome-app-rbac .rbac-export, .chrome-app-rbac .rbac-import, .chrome-app-rbac .rbac-copy {
+.chrome-app-rbac .rbac-export,
+.chrome-app-rbac .rbac-copy,
+.chrome-app-rbac .rbac-diff,
+.chrome-app-rbac .rbac-import {
   padding: 4px 10px;
   margin-left: 6px;
 }
