@@ -6,21 +6,24 @@ if (/[&?]appSource=([^&]+)/.exec(location.search)) {
   wrapper.style.display = 'none'; // 由 browser_action 控制显示隐藏
   wrapper.innerHTML = `
     <div class="rbac-tools">
-      <span class="app-source">项目: ${appSource} NODE-ID: <span class="node-id">${nodeId}</span></span>
+      <span class="app-source">appSource: ${appSource} nodeId: <span class="node-id">${nodeId}</span></span>
       <button class="rbac-button rbac-export">1. 导出</button>
       <button class="rbac-button rbac-copy">2. 复制</button>
       <button class="rbac-button rbac-diff">3. 比较</button>
       <button class="rbac-button rbac-import">4. 导入</button>
-      <button class="rbac-button rbac-remove">删除子节点</button>
+      <button class="rbac-button rbac-remove">删除</button>
+      <button class="rbac-button rbac-input">显示/隐藏</button>
     </div>
-    <div class="rbac-tree">
+    <div class="rbac-tree" style="display:none">
       <textarea></textarea>
     </div>
   `;
   document.body.appendChild(wrapper);
+  var inputContainer = document.querySelector('.chrome-app-rbac .rbac-tree');
 
   document.querySelector('.chrome-app-rbac .rbac-export').onclick = function () {
     RBAC.export();
+    inputContainer.style.display = 'block';
   }
 
   document.querySelector('.chrome-app-rbac .rbac-copy').onclick = function () {
@@ -41,6 +44,9 @@ if (/[&?]appSource=([^&]+)/.exec(location.search)) {
     if (confirm('确定要删除选中节点的全部子节点吗？')) {
       RBAC.remove();
     }
+  }
+  document.querySelector('.chrome-app-rbac .rbac-input').onclick = function () {
+    inputContainer.style.display = inputContainer.style.display === 'none' ? 'block' : 'none';
   }
 
   document.querySelector('.ui-tree-node').onclick = function (e) {
@@ -172,8 +178,9 @@ if (/[&?]appSource=([^&]+)/.exec(location.search)) {
       }).catch(e => alert(`导出异常 ${e}`));
     },
     remove() {
-      exportRbac().then(ret => {
-        Promise.all(ret.data.map(item => request('/rbac/web/uri/delete/v1', {
+      exportRbac().then(res => {
+        localStorage.setItem(`delete_rbac_tree_${appSource}_${nodeId}`, JSON.stringify(res));
+        Promise.all(res.data.map(item => request('/rbac/web/uri/delete/v1', {
           appSource: appSource,
           uriId: item.id,
         }))).then(rets => {
