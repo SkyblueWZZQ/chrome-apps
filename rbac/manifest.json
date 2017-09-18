@@ -7,7 +7,7 @@
         "default_title": "Rbac Transfer"
     },
     "content_scripts": [{
-        "matches": ["http://*/html/rbac/auth*"],
+        "matches": ["*://*/html/rbac/auth*"],
         "js": ["content.js"],
         "css": ["content.css"],
         "run_at": "document_end"
