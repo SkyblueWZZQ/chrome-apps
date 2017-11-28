@@ -1,64 +1,75 @@
 if (/[&?]appSource=([^&]+)/.exec(location.search)) {
+  var ROOT_ID = 0;
   var appSource = RegExp.$1;
-  var nodeId = 0;
-  var wrapper = document.createElement('div');
-  wrapper.className = 'chrome-app-rbac';
-  wrapper.style.display = 'none'; // 由 browser_action 控制显示隐藏
-  wrapper.innerHTML = `
-    <div class="rbac-tools">
-      <span class="app-source">appSource: ${appSource} nodeId: <span class="node-id">${nodeId}</span></span>
-      <button class="rbac-button rbac-export">1. 导出</button>
-      <button class="rbac-button rbac-copy">2. 复制</button>
-      <button class="rbac-button rbac-diff">3. 比较</button>
-      <button class="rbac-button rbac-import">4. 导入</button>
-      <button class="rbac-button rbac-remove">删除</button>
-      <button class="rbac-button rbac-input">显示/隐藏</button>
-    </div>
-    <div class="rbac-tree" style="display:none">
-      <textarea></textarea>
+  var nodeId = ROOT_ID;
+  var toolsWrapper = document.createElement('div');
+  toolsWrapper.className = 'chrome-rbac-tools';
+  toolsWrapper.innerHTML = `
+    节点ID: <span class="chrome-rbac-node-id">${nodeId}</span>
+    <button class="chrome-rbac-button chrome-rbac-remove-children">删除子节点</button>
+    <button class="chrome-rbac-button chrome-rbac-export-children">导出子节点</button>
+    <button class="chrome-rbac-button chrome-rbac-export">导出节点</button>
+    <button class="chrome-rbac-button chrome-rbac-import">导入</button>
+  `;
+  var modalWrapper = document.createElement('div');
+  modalWrapper.style.display = 'none';
+  modalWrapper.className = 'chrome-rbac-modal';
+  modalWrapper.innerHTML = `
+    <textarea class="chrome-rbac-textarea"></textarea>
+    <div class="chrome-rbac-modal-tools">
+      <button class="chrome-rbac-modal-button chrome-rbac-close">关闭</button>
+      <button class="chrome-rbac-modal-button chrome-rbac-copy">复制</button>
+      <button class="chrome-rbac-modal-button chrome-rbac-confirm-import">确认导入到选中节点</button>
     </div>
   `;
-  document.body.appendChild(wrapper);
-  var inputContainer = document.querySelector('.chrome-app-rbac .rbac-tree');
+  document.body.appendChild(toolsWrapper);
+  document.body.appendChild(modalWrapper);
+  var modalInput = document.querySelector('.chrome-rbac-textarea');
+  var importButton = document.querySelector('.chrome-rbac-confirm-import');
 
-  document.querySelector('.chrome-app-rbac .rbac-export').onclick = function () {
-    RBAC.export();
-    inputContainer.style.display = 'block';
+  function showModal(content = '') {
+    modalInput.value = content;
+    modalWrapper.style.display = '';
+    importButton.style.display = content ? 'none' : '';
   }
-
-  document.querySelector('.chrome-app-rbac .rbac-copy').onclick = function () {
-    input.focus();
-    input.select();
-    document.execCommand('copy');
+  function hideModal() {
+    modalWrapper.style.display = 'none';
   }
-
-  document.querySelector('.chrome-app-rbac .rbac-diff').onclick = function () {
-    RBAC.diff();
-  }
-
-  document.querySelector('.chrome-app-rbac .rbac-import').onclick = function () {
-    RBAC.import();
-  }
-
-  document.querySelector('.chrome-app-rbac .rbac-remove').onclick = function () {
+  document.querySelector('.chrome-rbac-remove-children').onclick = function () {
     if (confirm('确定要删除选中节点的全部子节点吗？')) {
       RBAC.remove();
     }
   }
-  document.querySelector('.chrome-app-rbac .rbac-input').onclick = function () {
-    inputContainer.style.display = inputContainer.style.display === 'none' ? 'block' : 'none';
+  document.querySelector('.chrome-rbac-close').onclick = function () {
+    hideModal();
   }
-
+  document.querySelector('.chrome-rbac-copy').onclick = function () {
+    modalInput.focus();
+    modalInput.select();
+    document.execCommand('copy');
+    hideModal();
+  }
+  document.querySelector('.chrome-rbac-export-children').onclick = function () {
+    RBAC.exportChildren();
+  }
+  document.querySelector('.chrome-rbac-export').onclick = function () {
+    RBAC.export();
+  }
+  document.querySelector('.chrome-rbac-import').onclick = function () {
+    showModal();
+  }
+  document.querySelector('.chrome-rbac-confirm-import').onclick = function () {
+    RBAC.check(function () {
+      RBAC.import();
+    });
+  }
   document.querySelector('.ui-tree-node').onclick = function (e) {
     var selectedNode = document.querySelector('.curSelectedNode a[node-id]');
     if (selectedNode) {
       nodeId = selectedNode.getAttribute('node-id');
-      document.querySelector('.app-source .node-id').innerHTML = nodeId;
+      document.querySelector('.chrome-rbac-node-id').innerHTML = nodeId;
     }
   }
-
-  var input = document.querySelector('.chrome-app-rbac .rbac-tree textarea');
-
   function request(url, data) {
     return fetch(url, {
       headers: {
@@ -72,9 +83,9 @@ if (/[&?]appSource=([^&]+)/.exec(location.search)) {
   }
 
   // 查询权限树
-  function exportRbac() {
+  function exportRbac(id) {
     return request('/rbac/web/uri/queryTree/v1', {
-      id: nodeId,
+      id: id !== undefined ? id : nodeId,
       appSource,
     });
   }
@@ -91,7 +102,6 @@ if (/[&?]appSource=([^&]+)/.exec(location.search)) {
         }
         item.childList = [];
         item.treeName = treeName.join('/');
-        debugger
         map[item.path] = item;
       }
     }
@@ -101,36 +111,65 @@ if (/[&?]appSource=([^&]+)/.exec(location.search)) {
 
   function getRbacInputValue() {
     try {
-      var res = JSON.parse(input.value);
+      var res = JSON.parse(modalInput.value);
     } catch (e) {
       alert(`权限数据解析错误: ${e}`);
     }
     return res;
   }
 
+  function getRbacNode(list) {
+    for (var i = 0; i < list.length; i++) {
+      var item = list[i];
+      if (item.id == nodeId) {
+        return item;
+      } else if (item.childList.length > 0) {
+        var subItem = getRbacNode(item.childList);
+        if (subItem) {
+          return subItem;
+        }
+      }
+    }
+  }
+
   var RBAC = {
     export() {
-      exportRbac().then(res => {
-        localStorage.setItem(`export_rbac_tree_${appSource}`, JSON.stringify(res));
-        input.value = JSON.stringify(res, null, 4);
+      if (nodeId == 0) {
+        return alert('根节点无法导出，只能导出子节点');
+      }
+      exportRbac(0).then(res => {
+        var node = getRbacNode(res.data);
+        res.data = [node];
+        var rbacTreeData = JSON.stringify(res, null, 4);
+        localStorage.setItem(`export_rbac_tree_${appSource}`, rbacTreeData);
+        showModal(rbacTreeData);
       });
     },
-    diff() {
-      exportRbac().then(ret => {
+    exportChildren() {
+      exportRbac().then(res => {
+        var rbacTreeData = JSON.stringify(res, null, 4);
+        localStorage.setItem(`export_rbac_tree_${appSource}`, rbacTreeData);
+        showModal(rbacTreeData);
+      });
+    },
+    check(callback) {
+      exportRbac(0).then(ret => {
         var oldRbacMap = rbacTreeToMap(ret);
         var newRbacMap = rbacTreeToMap(getRbacInputValue());
         var diffList = [];
         Object.keys(oldRbacMap).forEach(url => {
-          if (!newRbacMap[url]) {
+          if (newRbacMap[url]) {
             diffList.push(oldRbacMap[url]);
           }
         })
         if (diffList.length > 0) {
           localStorage.setItem(`diff_rbac_tree_${appSource}`, JSON.stringify(diffList));
-          var diffUrlList = diffList.map(item => (item.path + ' ' + item.treeName));
-          alert(`比较结果：会丢失 ${diffUrlList.length} 项权限\n${diffUrlList.join('\n')}`);
+          var diffUrlList = diffList.map(item => ('名称：' + item.treeName + '\t路径：' + item.path));
+          alert(`有 ${diffUrlList.length} 项权限重复\n${diffUrlList.join('\n')}`);
         } else {
-          alert(`比较结果：无`);
+          if (callback) {
+            callback();
+          }
         }
       }).catch(e => alert(`导出异常: ${e}`))
     },
@@ -166,7 +205,7 @@ if (/[&?]appSource=([^&]+)/.exec(location.search)) {
       });
       return childList.length ? this.importRbacItem(childList[0], parentItem) : Promise.resolve();
     },
-    import(childList) {
+    import() {
       var res = getRbacInputValue();
       exportRbac().then(ret => {
         // 导入前暂存数据，误操作恢复
