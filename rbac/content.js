@@ -114,6 +114,7 @@ if (/[&?]appSource=([^&]+)/.exec(location.search)) {
       var res = JSON.parse(modalInput.value);
     } catch (e) {
       alert(`权限数据解析错误: ${e}`);
+      throw new Error('权限数据解析错误');
     }
     return res;
   }
@@ -153,9 +154,9 @@ if (/[&?]appSource=([^&]+)/.exec(location.search)) {
       });
     },
     check(callback) {
+      var newRbacMap = rbacTreeToMap(getRbacInputValue());
       exportRbac(0).then(ret => {
         var oldRbacMap = rbacTreeToMap(ret);
-        var newRbacMap = rbacTreeToMap(getRbacInputValue());
         var diffList = [];
         Object.keys(oldRbacMap).forEach(url => {
           if (newRbacMap[url]) {
