@@ -1,0 +1,25 @@
+#app{
+  padding: 10px;
+}
+.notify{
+  border: 1px solid red;
+  background: #ccc;
+  position: absolute;
+  top: 38px;
+  left: 200px;
+}
+#app table{
+  border-collapse:collapse;
+  margin-top: 10px;
+}
+
+#app table, #app th, #app td{
+  border: 1px solid #ccc;
+  font-size: 12px;
+}
+#app th, #app td{
+  padding: 5px;
+}
+#app td button {
+  padding: 3px 10px;
+}
