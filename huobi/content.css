@@ -12,7 +12,9 @@
   border-collapse:collapse;
   margin-top: 10px;
 }
-
+.red{
+  color: red;
+}
 #app table, #app th, #app td{
   border: 1px solid #ccc;
   font-size: 12px;

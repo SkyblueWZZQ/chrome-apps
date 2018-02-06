@@ -60,7 +60,7 @@ function hackPage() {
       <tbody>
         <tr v-for="(item,index) in ad.list" v-if="true" v-bind:style="{background: item.isOnline ? '' : '#ddd'}">
           <td>{{index + 1}} [{{item.id}}]</td>
-          <td>
+          <td v-bind:class="{red: item.userId == '2034346'}">
             {{item.userName}} [{{item.userId}}]
             {{item.merchant ? '商家' : '个人'}}
             {{item.isOnline ? '在线' : '离线'}}
@@ -203,6 +203,7 @@ function halfHand() {
       const el = e.target;
       const refer = document.querySelector('.reference-num');
       const amount = document.querySelector('.payment-amount');
+      const otherNumber = document.querySelector('.other-number');
       const bankNum = document.querySelector('.bank .bank-num');
       const alipayNum = document.querySelector('.alipay .bank-num');
       const bank = document.querySelector('.bank .info-box');
@@ -211,6 +212,8 @@ function halfHand() {
         copy(refer.innerHTML);
       } else if (amount.contains(el)) { // copy 金额
         copy(amount.firstChild.nodeValue);
+      } else if (otherNumber.contains(el)) { // copy 数量
+        copy(otherNumber.firstChild.nodeValue);
       } else if (bankNum.contains(el)) { // copy 银行卡
         copy(bankNum.innerHTML);
       } else if (bank.firstChild === el) { // copy 姓名 或者银行名称
