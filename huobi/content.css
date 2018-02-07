@@ -12,10 +12,10 @@
   border-collapse:collapse;
   margin-top: 10px;
 }
-.red{
+.self{
   color: red;
 }
-.gray{
+.offline{
   background: #ddd;
 }
 #app table, #app th, #app td{
