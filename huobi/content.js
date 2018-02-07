@@ -25,6 +25,7 @@ function hackPage() {
     <div>
       <label>刷新间隔：<input type="number" step="100" style="width:60px" v-model="interval" /></label>
       <label>显示条数：<input type="number" step="5" style="width:50px" v-model="pageSize" /></label>
+      <label>警戒线：<input type="number" step="0.01" style="width:50px" v-model="notifyPrice" /></label>
       <label>在线：<input type="checkbox" v-model="isOnline" /></label>
       <a target="_blank" href="/#/login">登录</a>
       <a target="_blank" href="/#/trade/list?coin=2&type=1">列表</a>
@@ -87,6 +88,7 @@ function hackPage() {
   var vmodel = new Vue({
     el: '#app',
     data: {
+      notifyPrice: localStorage.getItem('notifyPrice') || '6.46',
       notifyMessage: '',
       ad: {
         list: [],
@@ -102,6 +104,11 @@ function hackPage() {
       isOnline: true,
       counter: 1,
     },
+    watch: {
+      notifyPrice: function(price){
+        localStorage.setItem('notifyPrice', price);
+      }
+    },
     created: function () {
       vm = this;
       this.fetchAdList();
@@ -111,6 +118,9 @@ function hackPage() {
     },
     methods: {
       notify(message) {
+        Notification.requestPermission(perm => {
+          var notification = new Notification('抢抢抢抢抢抢抢抢抢抢');
+        });
         clearTimeout(this.notifyTimer);
         this.notifyMessage = message;
         this.notifyTimer = setTimeout(() => {
@@ -124,6 +134,9 @@ function hackPage() {
             url: 'https://api-otc.huobi.pro/v1/otc/trade/list/public?coinId=2&tradeType=1&currentPage=1&payWay=&country=&merchant=0&online=' + (this.isOnline ? 1 : 0) + '&range=0&pageSize=' + this.pageSize + '&_tt=' + Date.now(),
           }).then(res => {
             if (res.data[1].price - res.data[0].price > 0.1) {
+              this.notify('赶紧抢购');
+            }
+            if(res.data[0].price == this.notifyPrice) {
               this.notify('赶紧抢购');
             }
             this.ad.list = res.data;
