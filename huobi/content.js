@@ -62,7 +62,7 @@ function hackPage() {
         <tr v-for="(item,index) in ad.list" v-if="true" v-bind:style="{background: item.isOnline ? '' : '#ddd'}">
           <td>{{index + 1}} [{{item.id}}]</td>
           <td v-bind:class="{red: item.userId == '2034346', gray: !item.isOnline}">
-            {{item.merchant ? '★' : ''}}
+            {{item.merchant ? '★' : '☆'}}
             {{item.userName}} [{{item.userId}}]
             {{item.tradeMonthTimes}} ({{item.appealMonthWinTimes}}/{{item.appealMonthTimes}})
           </td>
