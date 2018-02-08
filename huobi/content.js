@@ -28,7 +28,7 @@ function hackPage() {
       <label>警戒线：<input type="number" step="0.01" style="width:50px" v-model="notifyPrice" /></label>
       <label>在线：<input type="checkbox" v-model="isOnline" /></label>
       <a target="_blank" href="/#/login">登录</a>
-      <a target="_blank" href="/#/trade/list?coin=2&type=1">列表</a>
+      <a id="trade" target="_blank" href="/#/trade/list?coin=2&type=1">列表</a>
       <a target="_blank" href="/#/financial">资产</a>
       <a target="_blank" href="/#/order/my_order">历史</a>
       <a target="_blank" href="/#/order/my_ad">发布</a>
@@ -118,7 +118,10 @@ function hackPage() {
     methods: {
       notify(message) {
         Notification.requestPermission(perm => {
-          var notification = new Notification('抢抢抢抢抢抢抢抢抢抢');
+          var notification = new Notification('GOGOGOGOGOGOGOGOGOGO');
+          notification.onclick = () => {
+            document.getElementById('trade').click();
+          }
         });
         clearTimeout(this.notifyTimer);
         this.notifyMessage = message;
