@@ -159,7 +159,7 @@ if (/[&?]appSource=([^&]+)/.exec(location.search)) {
         var oldRbacMap = rbacTreeToMap(ret);
         var diffList = [];
         Object.keys(oldRbacMap).forEach(url => {
-          if (newRbacMap[url]) {
+          if (newRbacMap[url] && newRbacMap[url].showType != 'API') {
             diffList.push(oldRbacMap[url]);
           }
         })
