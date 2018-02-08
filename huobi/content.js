@@ -135,7 +135,7 @@ function hackPage() {
           fetchX({
             url: 'https://api-otc.huobi.pro/v1/otc/trade/list/public?coinId=2&tradeType=1&currentPage=1&payWay=&country=&merchant=0&online=' + (this.isOnline ? 1 : 0) + '&range=0&pageSize=' + this.pageSize + '&_tt=' + Date.now(),
           }).then(res => {
-            if (res.data[1].price - res.data[0].price > 0.1) {
+            if (res.data[1].price - res.data[0].price > 0.01) {
               this.notify('赶紧抢购');
             }
             if(res.data[0].price == this.notifyPrice) {
