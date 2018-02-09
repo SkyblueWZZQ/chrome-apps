@@ -1,12 +1,14 @@
 #app{
   padding: 10px;
 }
+#app .ahead {
+  margin-bottom: 10px;
+  font-size: 18px;
+}
 .notify{
   border: 1px solid red;
   background: #ccc;
-  position: absolute;
-  top: 38px;
-  left: 200px;
+  margin-left: 100px;
 }
 #app table{
   border-collapse:collapse;

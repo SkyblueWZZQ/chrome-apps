@@ -8,7 +8,7 @@
   },
   "content_scripts": [{
       "matches": ["https://otc.huobipro.com/*", "https://otc.huobi.pro/*"],
-      "js": ["vue.js", "content.js"],
+      "js": ["md5.js", "vue.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_end"
   }],

@@ -21,18 +21,26 @@ function hackPage() {
 
   document.body.innerHTML = `
   <div id="app">
-    <h3 class="notify" v-if="notifyMessage">{{notifyMessage}}</h3>
-    <div>
-      <label>刷新间隔：<input type="number" step="100" style="width:60px" v-model="interval" /></label>
-      <label>显示条数：<input type="number" step="5" style="width:50px" v-model="pageSize" /></label>
-      <label>警戒线：<input type="number" step="0.01" style="width:50px" v-model="notifyPrice" /></label>
-      <label>在线：<input type="checkbox" v-model="isOnline" /></label>
-      <a target="_blank" href="/#/login">登录</a>
-      <a id="trade" target="_blank" href="/#/trade/list?coin=2&type=1">列表</a>
-      <a target="_blank" href="/#/financial">资产</a>
-      <a target="_blank" href="/#/order/my_order">历史</a>
-      <a target="_blank" href="/#/order/my_ad">发布</a>
-      <span>计数：{{counter}}</span>
+    <div class="ahead">
+      <div>
+        <label>显示条数：<input type="number" step="5" style="width:40px" v-model="pageSize" /></label>
+        <label>刷新：<input type="checkbox" v-model="intervalOn" /></label>
+        <label>间隔：<input type="number" step="100" style="width:40px" v-model="interval" /></label>
+        <label>在线：<input type="checkbox" v-model="isOnline" /></label>
+        <a target="_blank" href="/#/login">登录</a>
+        <a id="trade" target="_blank" href="/#/trade/list?coin=2&type=1">列表</a>
+        <a target="_blank" href="/#/financial">资产</a>
+        <a target="_blank" href="/#/order/my_order">历史</a>
+        <a target="_blank" href="/#/order/my_ad">发布</a>
+        <span>计数：{{counter}}</span>
+      </div>
+      <div>
+        <label>翻了：<input type="checkbox" v-model="nb" /></label>
+        <label>数：<input style="width:60px" v-model="nbCount" /></label>
+        <label>警戒：<input type="checkbox" v-model="buyNotify" /></label>
+        <label>线：<input type="number" step="0.01" style="width:50px" v-model="notifyPrice" /></label>
+        <label>数：<input style="width:60px" v-model="buyNotifyCount" /></label>
+      </div>
     </div>
     <div v-if="false">
       <p>
@@ -44,7 +52,10 @@ function hackPage() {
       <span>左边显示今天买入的订单列表</span>
       <span>右边显示今天卖出的订单列表</span>
     </div>
-    <h2>{{ad.totalCount + '条/' + ad.totalPage + '页'}}</h2>
+    <h2>
+      <span>{{ad.totalCount + '条/' + ad.totalPage + '页'}}</span>
+      <span class="notify" v-if="notifyMessage">{{notifyMessage}}</span>
+    </h2>
     <table>
       <thead>
         <tr>
@@ -99,13 +110,29 @@ function hackPage() {
 
       },
       interval: 500,
-      pageSize: 30,
+      intervalOn: true,
+      pageSize: 40,
       isOnline: true,
+      nb: false,
+      nbCount: localStorage.getItem('nbCount') || 'auto',
+      buyNotify: false,
+      buyNotifyCount: localStorage.getItem('buyNotifyCount') || '50000',
       counter: 1,
     },
     watch: {
-      notifyPrice: function(price){
+      notifyPrice: function (price) {
         localStorage.setItem('notifyPrice', price);
+      },
+      nbCount: function (count) {
+        localStorage.setItem('nbCount', count);
+      },
+      buyNotifyCount: function (count) {
+        localStorage.setItem('buyNotifyCount', count);
+      },
+      intervalOn: function (on) {
+        if (on) {
+          this.fetchAdList();
+        }
       }
     },
     created: function () {
@@ -118,7 +145,7 @@ function hackPage() {
     methods: {
       notify(message) {
         Notification.requestPermission(perm => {
-          var notification = new Notification('GOGOGOGOGOGOGOGOGOGO');
+          var notification = new Notification(message);
           notification.onclick = () => {
             document.getElementById('trade').click();
           }
@@ -135,16 +162,25 @@ function hackPage() {
           fetchX({
             url: 'https://api-otc.huobi.pro/v1/otc/trade/list/public?coinId=2&tradeType=1&currentPage=1&payWay=&country=&merchant=0&online=' + (this.isOnline ? 1 : 0) + '&range=0&pageSize=' + this.pageSize + '&_tt=' + Date.now(),
           }).then(res => {
-            if (res.data[1].price - res.data[0].price > 0.01) {
-              this.notify('赶紧抢购');
+            const firstItem = res.data[0];
+            const secondItem = res.data[1];
+            const ret = secondItem.price - firstItem.price;
+            if (ret > 0.015) {
+              console.log('翻了翻了翻了', firstItem.price, secondItem.price, ret);
+              this.notify('翻了翻了翻了');
+              // this.goule();
             }
-            if(res.data[0].price == this.notifyPrice) {
-              this.notify('赶紧抢购');
+            if (res.data[0].price == this.notifyPrice) {
+              console.log('警戒警戒警戒', firstItem.price, this.buyNotifyCount);
+              this.notify('警戒警戒警戒');
+              // this.goule();
             }
             this.ad.list = res.data;
             this.ad.totalCount = res.totalCount;
             this.ad.totalPage = res.totalPage;
-            this.fetchAdList();
+            if (this.intervalOn) {
+              this.fetchAdList();
+            }
           }).catch(err => {
             this.fetchAdList();
             console.warn('fetchAdList error', err);
@@ -154,23 +190,62 @@ function hackPage() {
       fetchOrderList() {
 
       },
-      order(item, count) {
+      order(item, count, all) {
+        return;
         fetchX({
           url: 'https://api-otc.huobi.pro/v1/otc/order/ticket?tradeId=' + item.id
         }).then(res => {
-          const { price, minTradeLimit, maxTradeLimit, tradeCount } = res.data;
+          const { price, minTradeLimit, maxTradeLimit, tradeCount, ticket, tradeId } = res.data;
           const total = tradeCount * price;
           const min = minTradeLimit;
           const max = Math.min(total, maxTradeLimit);
           if (count === 'all') {
             count = max;
+          } else if (count === 'auto') {
+            if (max > 10000 && max < 100000) {
+              count = max;
+            } else {
+              console.log('没敢下单（小于1w大于10w）', minTradeLimit, maxTradeLimit, tradeCount, price, total);
+              return;
+            }
+          }
+          if (count > max && all) {
+            count = max; // 警戒和够了，自动全部
           }
           if (count < min) {
-            this.notify('最小买 ' + min);
+            this.notify('最小 ' + min);
           } else if (count > max) {
-            this.notify('最大买 ' + max);
+            this.notify('最大 ' + max);
           } else {
-            console.log('买' + count);
+            const param = {
+              amount: Math.floor(count),
+              ticket: ticket,
+              tradeId: tradeId,
+              password: md5('' + 'otc, nono')
+            };
+            const formData = new FormData();
+            Object.keys(param).forEach(key => {
+              formData.append(key, param[key]);
+            })
+            console.log(param);
+            debugger
+            fetchX({
+              url: 'https://api-otc.huobi.pro/v1/otc/order/create',
+              method: 'POST',
+              body: formData
+            }).then(res => {
+              if (res.code == 200) {
+                fetchX({
+                  url: 'https://api-otc.huobi.pro/v1/otc/order/2009458/detail/appeal',
+                }).then(info => {
+                  console.log(info);
+                  localStorage.setItem()
+                })
+              } else {
+                this.notify('报错了', res);
+              }
+            }).catch(res => {
+            })
           }
         })
       }
@@ -178,24 +253,75 @@ function hackPage() {
   });
 }
 
+function buyall() {
+  var all = document.querySelectorAll('.all');
+  if (all.length === 0) {
+    return setTimeout(buyall, 50);
+  } else {
+    all[1].click();
+  }
+}
 
 // 半手工刷新广告列表 // 双击页面触发和关闭
+var turnOn = false;
+var inPriceInput = document.createElement('input');
+inPriceInput.id = 'inPriceInput';
+inPriceInput.oninput = () => {
+  localStorage.setItem('inPriceInput', inPriceInput.value);
+}
 function halfHand() {
-  var turnOn = false;
+  var goffCount = 0;
   // 半手工操作
   function goff() {
+    goffCount++;
+    if (goffCount > 20) {
+      goffCount = 0;
+      console.clear();
+    }
+    if (!document.getElementById('inPriceInput')) {
+      var button = document.querySelector('.table-head-right');
+      var wrapper = document.querySelector('.table-head');
+      inPriceInput.value = localStorage.getItem('inPriceInput') || '6.44';
+      wrapper.insertBefore(inPriceInput, button);
+    }
     var nnd = document.querySelectorAll('.table-head input')[0];
     if (nnd.checked) {
       nnd.click();
     }
     function check() {
-      if (document.querySelector('.buytable').childNodes.length == 3) {
-        setTimeout(goff, 1000); // 接口返回后间隔 1 秒进行下一次刷新
+      var row = document.querySelector('.right-margin .fontweight span');
+      if (row) {
+        var onlineIndex = [...document.querySelectorAll('.user-avatar-in')].findIndex(item => item.className.indexOf('not-online') <= 0);
+        var price = document.querySelectorAll('.right-margin .fontweight span')[onlineIndex].innerText.split(/\s/)[0];
+        console.log('check', price, inPriceInput.value);
+        if (parseFloat(price, 10) < parseFloat(inPriceInput.value, 10)) {
+          turnOn = false;
+          document.querySelectorAll('.buy-btn')[onlineIndex].click();
+          buyall();
+        } else {
+          setTimeout(goff, 500); // 接口返回后间隔 1 秒进行下一次刷新
+        }
+      } else {
+        setTimeout(check, 50);
       }
     }
     if (turnOn) {
       document.querySelectorAll('.table-head input')[1].click();
-      setTimeout(check, 200); // 查看接口是否返回
+      const beforeCheckCount = Date.now();
+      function beforeCheck() {
+        if (Date.now() - beforeCheckCount > 1000) {
+          console.log('有问题，重新 goff');
+          return goff(); // 有问题重新开始
+        }
+        var hasList = document.querySelector('.buy-btn');
+        if (!hasList) {
+          console.log('beforeCheck check');
+          check(); // 查看接口是否返回
+        } else {
+          setTimeout(beforeCheck, 50);
+        }
+      }
+      beforeCheck();
     }
   }
   const copyInput = document.createElement('input');
@@ -259,11 +385,18 @@ function fetchX(options) {
     headers: new Headers({
       token: localStorage.otc_token,
       'X-Requested-With': 'XMLHttpRequest',
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      fingerprint: 'e81918ba3398fe377a6722c505e1a0e7',
+      Origin: 'https://otc.huobi.pro',
       ...options.headers,
       token: localStorage.getItem('otc_token'),
     }),
     method: options.method || 'GET',
     mode: 'cors',
     credentials: 'include',
-  }).then(res => res.text()).then(text => JSON.parse(text));
+  }).then(res => {
+    return res.text();
+  }).then(text => {
+    return JSON.parse(text);
+  });
 }
