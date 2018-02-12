@@ -1,7 +1,23 @@
-if (location.pathname === '/aa') {
-  hackPage();
-} else {
-  halfHand();
+
+function fetchX(options) {
+  return fetch(options.url, {
+    headers: new Headers({
+      token: localStorage.otc_token,
+      'X-Requested-With': 'XMLHttpRequest',
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      fingerprint: 'e81918ba3398fe377a6722c505e1a0e7',
+      Origin: 'https://otc.huobi.pro',
+      ...options.headers,
+      token: localStorage.getItem('otc_token'),
+    }),
+    method: options.method || 'GET',
+    mode: 'cors',
+    credentials: 'include',
+  }).then(res => {
+    return res.text();
+  }).then(text => {
+    return JSON.parse(text);
+  });
 }
 
 // 自定义的 hack 页面，可以进行订单快速操作和查看，便捷高效啊啊啊啊啊
@@ -39,7 +55,7 @@ function hackPage() {
         <label>数：<input style="width:60px" v-model="nbCount" /></label>
         <label>警戒：<input type="checkbox" v-model="buyNotify" /></label>
         <label>线：<input type="number" step="0.01" style="width:50px" v-model="notifyPrice" /></label>
-        <label>数：<input style="width:60px" v-model="buyNotifyCount" /></label>
+        <label>数：<input type="number" step="10000" style="width:60px" v-model="buyNotifyCount" /></label>
       </div>
     </div>
     <div v-if="false">
@@ -162,18 +178,15 @@ function hackPage() {
           fetchX({
             url: 'https://api-otc.huobi.pro/v1/otc/trade/list/public?coinId=2&tradeType=1&currentPage=1&payWay=&country=&merchant=0&online=' + (this.isOnline ? 1 : 0) + '&range=0&pageSize=' + this.pageSize + '&_tt=' + Date.now(),
           }).then(res => {
-            const firstItem = res.data[0];
-            const secondItem = res.data[1];
+            const firstItem = OrderManager.transferItem(res.data[0]);
+            const secondItem = OrderManager.transferItem(res.data[1]);
             const ret = secondItem.price - firstItem.price;
-            if (ret > 0.015) {
-              console.log('翻了翻了翻了', firstItem.price, secondItem.price, ret);
+            if (ret > 0.015 && firstItem.amount > 9000) {
+              console.log('翻了翻了翻了', firstItem.price, secondItem.price, firstItem);
               this.notify('翻了翻了翻了');
-              // this.goule();
             }
-            if (res.data[0].price == this.notifyPrice) {
-              console.log('警戒警戒警戒', firstItem.price, this.buyNotifyCount);
-              this.notify('警戒警戒警戒');
-              // this.goule();
+            if(firstItem.price == this.notifyPrice && firstItem.amount >= parseInt(this.buyNotifyCount)) {
+              this.notify('GOGOGO');
             }
             this.ad.list = res.data;
             this.ad.totalCount = res.totalCount;
@@ -253,13 +266,202 @@ function hackPage() {
   });
 }
 
-function buyall() {
-  var all = document.querySelectorAll('.all');
-  if (all.length === 0) {
-    return setTimeout(buyall, 50);
-  } else {
-    all[1].click();
+var OrderManager = window.OrderManager = {
+  init() {
+    this.ondblclick();
+
+    const checkboxs = this.checkboxs = document.querySelectorAll('.table-head .ivu-checkbox-input');
+    this.$merchant = checkboxs[0];
+    this.$online = checkboxs[1];
+
+    const autoCheckboxWrapper = this.autoCheckboxWrapper = document.createElement('div');
+    autoCheckboxWrapper.id = "autoCheckboxWrapper";
+    autoCheckboxWrapper.className = 'auto-checkbox-wrapper';
+    autoCheckboxWrapper.innerHTML = `
+      <label>自动下单：<input id="autoCheckbox" type="checkbox" /></label>
+      <input style="width:40px;margin-left:30px;" type="number" step="1" id="autoStep" value="1" />
+    `;
+    document.body.appendChild(autoCheckboxWrapper)
+
+    const autoCheckbox = this.autoCheckbox = document.getElementById('autoCheckbox');
+    this.autoStep = document.getElementById('autoStep');
+    autoCheckbox.onchange = () => {
+      if (location.hash == '#/trade/list?coin=2&type=1' && autoCheckbox.checked) {
+        this.refresh();
+      }
+    }
+  },
+  ondblclick() {
+    const copyInput = this.copyInput = document.createElement('input');
+    copyInput.className = 'copy-input'
+    copyInput.style.position = 'absolute';
+    copyInput.style.marginLeft = '800px';
+    copyInput.style.marginTop = '0px';
+    copyInput.size = 40;
+    document.body.ondblclick = (e) => {
+      if (location.hash.startsWith('#/chat/')) {
+        const el = e.target;
+        const refer = document.querySelector('.reference-num');
+        const amount = document.querySelector('.payment-amount');
+        const otherNumber = document.querySelector('.other-number');
+        const bankNum = document.querySelector('.bank .bank-num');
+        const alipayNum = document.querySelector('.alipay .bank-num');
+        const bank = document.querySelector('.bank .info-box');
+        const alipay = document.querySelector('.alipay .info-box');
+        if (refer.contains(el)) { // copy 参考号
+          this.copy(refer.innerHTML);
+        } else if (amount.contains(el)) { // copy 金额
+          this.copy(amount.firstChild.nodeValue);
+        } else if (otherNumber.contains(el)) { // copy 数量
+          this.copy(otherNumber.firstChild.nodeValue);
+        } else if (bankNum.contains(el)) { // copy 银行卡
+          this.copy(bankNum.innerHTML);
+        } else if (bank.firstChild === el) { // copy 姓名 或者银行名称
+          var texts = bank.firstChild.innerText.split(/\s+/);
+          if (e.offsetX > 50) {
+            this.copy(texts[1]); // copy 银行名称
+          } else {
+            this.copy(texts[0]); // copy 姓名
+          }
+        } else if (bank.firstChild.nextElementSibling === el) { // 复制银行支行
+          this.copy(bank.firstChild.nextElementSibling.innerHTML);
+        } else if (alipayNum.contains(el)) { // 复制支付宝账号
+          this.copy(alipayNum.innerHTML);
+        } else if (alipay.firstChild === el) { // 复制支付宝账号
+          this.copy(alipay.firstChild.innerHTML);
+        }
+      }
+    }
+  },
+  copy(text) {
+    const copyInput = this.copyInput;
+    const detail = document.querySelector('.order-detail-wrapper');
+    detail.insertBefore(copyInput, detail.firstChild);
+    copyInput.value = text;
+    copyInput.focus();
+    copyInput.select();
+    document.execCommand('copy');
+  },
+  listEmpty(empty, callback) {
+    const check = () => {
+      setTimeout(() => {
+        const list = document.querySelector('.table').childNodes;
+        if (empty && list.length === 0 || !empty && list.length > 0) {
+          callback()
+        } else {
+          check();
+        }
+      }, 10); // 检测频率
+    }
+    check();
+  },
+  refresh() {
+    const start = Date.now();
+    const ret = [this.$online.checked, start]
+    console.log(ret.join(','));
+    this.$online.click();
+    clearTimeout(this.refreshTimer);
+    this.refreshTimer = setTimeout(() => {
+      console.warn([this.$online.checked, Date.now() - start].join(','));
+      this.$online.click();
+    }, 5000);
+    this.listEmpty(true, () => {
+      ret.push(Date.now() - start);
+      console.log(ret.join(','));
+      this.listEmpty(false, () => {
+        ret.push(Date.now() - start);
+        console.log(ret.join(','));
+        clearTimeout(this.refreshTimer);
+        this.checkAutoOrder();
+      });
+    })
+  },
+  refreshAgain() {
+    if (this.autoCheckbox.checked) {
+      setTimeout(() => {
+        this.refresh();
+      }, 100);
+    }
+  },
+  checkAutoOrder() {
+    if (this.$online.checked) {
+      this.checkAutoOrderPrice(this.getItem(0), this.getItem(1));
+    } else { // 两次太浪费时间，抢不到，改为接口判断然后一次界面
+      const onlineItems = [...document.querySelectorAll('.user-avatar-in')].map((item, index) => {
+        item.index = index;
+        return item;
+      }).filter(item => !item.className.indexOf('not-online') >= 0)
+      if (onlineItems.length >= 2) {
+        this.checkAutoOrderPrice(this.getItem(onlineItems[0].index), this.getItem(onlineItems[1].index));
+      } else {
+        this.refreshAgain();
+      }
+    }
+  },
+  checkAutoOrderPrice(firstItem, secondItem) {
+    const now = Date.now();
+    const interval = now - this.checkAutoOrderTimer;
+    this.checkAutoOrderTimer = now;
+
+    const diff = secondItem.price - firstItem.price;
+    console.log(interval, firstItem.price, secondItem.price, firstItem.amount + ' CNY');
+    if (diff > (0.01 * this.autoStep.value + 0.005) && firstItem.amount > 10000 || diff > 0.35 && firstItem.amount > 5000) {
+      console.log(JSON.stringify(firstItem));
+      this.buy(firstItem);
+    } else {
+      this.refreshAgain();
+    }
+  },
+  buy(firstItem) {
+    this.autoCheckbox.checked = false;
+    document.querySelector('.buy-btn').click();
+    const buyall = () => {
+      var all = document.querySelectorAll('.all');
+      if (all.length === 0) {
+        return setTimeout(buyall, 10);
+      } else {
+        // 可以买多少
+        all[1].click();
+      }
+    }
+    buyall();
+  },
+  transferItem(item) { // 转换标准数据（包含 price min max count amount total）
+    const price = item.price;
+    const min = item.minTradeLimit;
+    const max = item.maxTradeLimit;
+    const count = item.tradeCount;
+    const total = Math.floor(count * price);
+    return {
+      price: price,
+      min: min,
+      max: max,
+      count: item.tradeCount,
+      amount: Math.min(max, total),
+      total: total,
+    };
+  },
+  getItem(index) { // 从 dom 获取数据并 transfer 转换
+    const dom = document.querySelector('.buytable .table').childNodes[index];
+    const priceRange = dom.getElementsByClassName('totals')[0].innerText.replace(/,|\n|\s/g, '').split('CNY');
+    const price = priceRange[0];
+    const range = priceRange[1].split('-');
+    const tradeCount = dom.getElementsByClassName('residue')[0].innerText.replace(/,|(\sUSDT)/g, '');
+    return this.transferItem({
+      price: parseFloat(price),
+      minTradeLimit: parseFloat(range[0]),
+      maxTradeLimit: parseFloat(range[1]),
+      tradeCount: parseFloat(tradeCount),
+    });
   }
+}
+
+if (location.pathname === '/aa') {
+  hackPage();
+} else {
+  setTimeout(() => {
+    OrderManager.init();
+  }, 2000);
 }
 
 // 半手工刷新广告列表 // 双击页面触发和关闭
@@ -324,6 +526,7 @@ function halfHand() {
       beforeCheck();
     }
   }
+
   const copyInput = document.createElement('input');
   copyInput.className = 'copy-input'
   copyInput.style.position = 'absolute';
@@ -339,6 +542,7 @@ function halfHand() {
     copyInput.select();
     document.execCommand('copy');
   }
+
   document.body.ondblclick = function (e) {
     if (location.hash.startsWith('#/chat/')) {
       const el = e.target;
@@ -378,25 +582,4 @@ function halfHand() {
       }
     }
   }
-}
-
-function fetchX(options) {
-  return fetch(options.url, {
-    headers: new Headers({
-      token: localStorage.otc_token,
-      'X-Requested-With': 'XMLHttpRequest',
-      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-      fingerprint: 'e81918ba3398fe377a6722c505e1a0e7',
-      Origin: 'https://otc.huobi.pro',
-      ...options.headers,
-      token: localStorage.getItem('otc_token'),
-    }),
-    method: options.method || 'GET',
-    mode: 'cors',
-    credentials: 'include',
-  }).then(res => {
-    return res.text();
-  }).then(text => {
-    return JSON.parse(text);
-  });
 }

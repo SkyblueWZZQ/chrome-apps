@@ -30,3 +30,9 @@
 #app td button {
   padding: 3px 10px;
 }
+.auto-checkbox-wrapper {
+  position: absolute;
+  top: 176px;
+  left: 700px;
+  font-size: 16px;
+}
