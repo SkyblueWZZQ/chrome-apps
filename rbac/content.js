@@ -1,6 +1,5 @@
 var ROOT_ID = 0;
-var reg = /[&?]appSource=([^&]+)/.exec(location.search);
-var appSource = reg ? RegExp.$1 : location.pathname.split('/')[2];
+var appSource = location.pathname.split('/')[2];
 var nodeId = ROOT_ID;
 var toolsWrapper = document.createElement('div');
 toolsWrapper.className = 'chrome-rbac-tools';
@@ -26,16 +25,28 @@ modalWrapper.innerHTML = `
 document.body.appendChild(toolsWrapper);
 document.body.appendChild(modalWrapper);
 
-alert('目前只支持新版rbac整个tree的导出！');
-if (reg) {
-  document.querySelector('.ui-tree-node').onclick = function (e) {
-    var selectedNode = document.querySelector('.curSelectedNode a[node-id]');
-    if (selectedNode) {
-      nodeId = selectedNode.getAttribute('node-id');
-      document.querySelector('.chrome-rbac-node-id').innerHTML = nodeId;
+setTimeout(
+  function () {
+    document.querySelector('.ant-tree-child-tree').onclick = function (e) {
+      var selectedContent = e.target.innerHTML;
+      if (selectedContent) {
+        selectedContent.match(/【(\d{5})】/);
+        nodeId = RegExp.$1;
+        document.querySelector('.chrome-rbac-node-id').innerHTML = nodeId;
+      }
     }
-  }
-}
+    document.querySelector('.ant-menu').onclick = function (e) {
+      var selectedMenu = e.target.href;
+      if (selectedMenu) {
+        var path = selectedMenu.split('/').pop();
+        if (path === 'features') {
+          toolsWrapper.style.display = 'block';
+        } else {
+          toolsWrapper.style.display = 'none';
+        }
+      }
+    }
+  }, 1000);
 
 
 
@@ -207,14 +218,6 @@ document.querySelector('.chrome-rbac-confirm-import').onclick = function () {
     RBAC.import();
   });
 }
-// var nodeClassName = reg ? '.ui-tree-node' : '.ant-tree-node-selected';
-// document.querySelector(nodeClassName).onclick = function (e) {
-//   var selectedNode = document.querySelector('.curSelectedNode a[node-id]');
-//   if (selectedNode) {
-//     nodeId = selectedNode.getAttribute('node-id');
-//     document.querySelector('.chrome-rbac-node-id').innerHTML = nodeId;
-//   }
-// }
 function request(url, data) {
   return fetch(url, {
     headers: {

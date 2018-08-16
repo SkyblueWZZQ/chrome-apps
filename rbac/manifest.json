@@ -6,12 +6,21 @@
     "browser_action": {
         "default_title": "Rbac Transfer"
     },
-    "content_scripts": [{
-        "matches": ["*://*/html/rbac/auth*"],
-        "js": ["content.js"],
-        "css": ["content.css"],
-        "run_at": "document_end"
-    }],
+    "content_scripts": [
+        {
+            "matches": [
+                "*://*/html/rbac/auth*",
+                "*://*/web/*/features"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "css": [
+                "content.css"
+            ],
+            "run_at": "document_end"
+        }
+    ],
     "background": {
         "persistent": true,
         "scripts": [

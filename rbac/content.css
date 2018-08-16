@@ -1,9 +1,9 @@
 .chrome-rbac-tools {
-  background: #fff;
+  /* background: #fff; */
   padding-left: 10px;
-  padding-right: 10px;
+  padding-right: 30px;
   position: absolute;
-  top: 130px;
+  top: 70px;
   right: 0;
   text-align: right;
 }
@@ -11,6 +11,10 @@
   padding: 4px 10px;
   margin-left: 6px;
   cursor: pointer;
+  border-radius: 4px;
+  color: #FF5000;
+  background-color: #fff;
+  border-color: #FF5000;
 }
 .chrome-rbac-modal {
   position: absolute;
@@ -30,4 +34,7 @@
 }
 .chrome-rbac-modal-tools {
   text-align: right;
+}
+.chrome-rbac-node-id{
+  color: #FF5000;
 }
