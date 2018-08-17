@@ -17,6 +17,10 @@
   border-color: #FF5000;
   outline: none;
 }
+.chrome-rbac-button:hover{
+  background: #FF5000;
+  color: #FFF;
+}
 .chrome-rbac-modal {
   position: absolute;
   right: 30px;

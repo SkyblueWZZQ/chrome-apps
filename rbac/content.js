@@ -71,6 +71,18 @@ function showModal(content = '') {
 function hideModal() {
   modalWrapper.style.display = 'none';
 }
+function selectingStyle(e) {
+  var selectingNode = e.currentTarget;
+  selectingNode.style.background = '#FF5000';
+  selectingNode.style.color = '#FFF';
+  var buttons = toolsWrapper.querySelectorAll('button');
+  for (var b = 0; b < buttons.length; b++) {
+    if (buttons[b] != selectingNode) {
+      buttons[b].style.background = '#FFF';
+      buttons[b].style.color = '#FF5000';
+    }
+  }
+}
 
 var rootData = {
   "id": 0,
@@ -209,7 +221,8 @@ var RBAC = {
 
 
 
-document.querySelector('.chrome-rbac-remove-children').onclick = function () {
+document.querySelector('.chrome-rbac-remove-children').onclick = function (e) {
+  selectingStyle(e)
   if (confirm('确定要删除选中节点的全部子节点吗？')) {
     RBAC.remove();
   }
@@ -223,19 +236,24 @@ document.querySelector('.chrome-rbac-copy').onclick = function () {
   document.execCommand('copy');
   hideModal();
 }
-document.querySelector('.chrome-rbac-export-children').onclick = function () {
+document.querySelector('.chrome-rbac-export-children').onclick = function (e) {
+  selectingStyle(e)
   RBAC.exportChildren();
 }
-document.querySelector('.chrome-rbac-export').onclick = function () {
+document.querySelector('.chrome-rbac-export').onclick = function (e) {
+  selectingStyle(e)
   RBAC.export();
 }
-document.querySelector('.chrome-rbac-export-url').onclick = function () {
+document.querySelector('.chrome-rbac-export-url').onclick = function (e) {
+  selectingStyle(e)
   RBAC.exportUrl();
 }
-document.querySelector('.chrome-rbac-import').onclick = function () {
+document.querySelector('.chrome-rbac-import').onclick = function (e) {
+  selectingStyle(e)
   showModal();
 }
-document.querySelector('.chrome-rbac-confirm-import').onclick = function () {
+document.querySelector('.chrome-rbac-confirm-import').onclick = function (e) {
+  selectingStyle(e)
   RBAC.check(function () {
     RBAC.import();
   });
