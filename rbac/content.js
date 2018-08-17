@@ -131,10 +131,12 @@ var RBAC = {
     });
   },
   exportUrl() {
-    exportRbac().then(res => {
+    exportRbac(0).then(res => {
+      var node = getRbacNode(res.data);
+      res.data = [node];
       formatUrl(res.data, LEVEL);
       // var rbacTreeData = JSON.stringify(urls, null, 4);
-      var rbacTreeData = urls.reverse().join('');
+      var rbacTreeData = urls.join('');
       localStorage.setItem(`export_rbac_tree_${appSource}`, rbacTreeData);
       showModal(rbacTreeData);
     });
@@ -329,7 +331,7 @@ function formatUrl(treeData, level) {
     var url = item.path;
     var showType = showTypeMap[item.showType];
     var space = '\n';
-    for (var s = 0; s <= level; s++) {
+    for (var s = 1; s < level; s++) {
       space = space + '\t'
     }
     // for (var n = 0; n < showButtonType.length; n++) {
@@ -339,10 +341,10 @@ function formatUrl(treeData, level) {
     // }
 
     var path = `${space}${name}  ${url}（${showType}）`
+    urls.push(path);
     if (item.childList.length > 0) {
       formatUrl(item.childList, level + 1)
     }
-    urls.push(path);
   }
 }
 
