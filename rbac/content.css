@@ -15,6 +15,7 @@
   color: #FF5000;
   background-color: #fff;
   border-color: #FF5000;
+  outline: none;
 }
 .chrome-rbac-modal {
   position: absolute;
@@ -38,6 +39,7 @@
   color: #FF5000;
   background-color: #fff;
   border-color: #FF5000;
+  outline: none;
   border-radius: 4px;
 }
 .chrome-rbac-modal-tools {
