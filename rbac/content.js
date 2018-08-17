@@ -1,6 +1,21 @@
 var ROOT_ID = 0;
 var appSource = location.pathname.split('/')[2];
 var nodeId = ROOT_ID;
+
+var showTypeMap = {
+  'NAV': '导航',
+  'HTML': '页面',
+  'API': '接口',
+}
+var urls = [];
+var LEVEL = 1;
+var spaceMap = {
+  1: '\n',
+  2: '\n\t',
+  3: '\n\t\t',
+  4: '\n\t\t\t'
+}
+
 var toolsWrapper = document.createElement('div');
 toolsWrapper.className = 'chrome-rbac-tools';
 toolsWrapper.innerHTML = `
@@ -9,7 +24,7 @@ toolsWrapper.innerHTML = `
     <button class="chrome-rbac-button chrome-rbac-export-children">导出子节点</button>
     <button class="chrome-rbac-button chrome-rbac-export">导出节点</button>
     <button class="chrome-rbac-button chrome-rbac-import">导入</button>
-    <button class="chrome-rbac-button chrome-rbac-import">导出差异</button>
+    <button class="chrome-rbac-button chrome-rbac-export-url">导出权限路径</button>
   `;
 var modalWrapper = document.createElement('div');
 modalWrapper.style.display = 'none';
@@ -104,6 +119,15 @@ var RBAC = {
   exportChildren() {
     exportRbac().then(res => {
       var rbacTreeData = JSON.stringify(res, null, 4);
+      localStorage.setItem(`export_rbac_tree_${appSource}`, rbacTreeData);
+      showModal(rbacTreeData);
+    });
+  },
+  exportUrl() {
+    exportRbac().then(res => {
+      formatUrl(res.data, LEVEL);
+      // var rbacTreeData = JSON.stringify(urls, null, 4);
+      var rbacTreeData = urls.reverse().join('');
       localStorage.setItem(`export_rbac_tree_${appSource}`, rbacTreeData);
       showModal(rbacTreeData);
     });
@@ -210,6 +234,9 @@ document.querySelector('.chrome-rbac-export-children').onclick = function () {
 document.querySelector('.chrome-rbac-export').onclick = function () {
   RBAC.export();
 }
+document.querySelector('.chrome-rbac-export-url').onclick = function () {
+  RBAC.exportUrl();
+}
 document.querySelector('.chrome-rbac-import').onclick = function () {
   showModal();
 }
@@ -232,6 +259,7 @@ function request(url, data) {
 
 // 查询权限树
 function exportRbac(id) {
+  urls = [];
   return request('/rbac/web/uri/queryTree/v1', {
     id: id !== undefined ? id : nodeId,
     appSource,
@@ -278,6 +306,21 @@ function getRbacNode(list) {
         return subItem;
       }
     }
+  }
+}
+function formatUrl(treeData, level) {
+  for (var i = 0; i < treeData.length; i++) {
+    var item = treeData[i];
+    var name = item.name;
+    var url = item.path;
+    var showType = showTypeMap[item.showType];
+    var space = spaceMap[level];
+
+    var path = `${space}${name}  ${url}（${showType}）`
+    if (item.childList.length > 0) {
+      formatUrl(item.childList, level + 1)
+    }
+    urls.push(path);
   }
 }
 

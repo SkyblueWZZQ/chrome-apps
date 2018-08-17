@@ -18,19 +18,27 @@
 }
 .chrome-rbac-modal {
   position: absolute;
-  right: 10px;
-  width: 400px;
-  top: 160px;
+  right: 30px;
+  width: 600px;
+  top: 120px;
 }
 .chrome-rbac-modal .chrome-rbac-textarea {
   display: block;
   width: 100%;
-  height: 300px;
+  height: 500px;
+  padding:0 10px;
+  background: #FFF;
+  border: 1px solid #FF5000;
+  border-radius: 6px;
 }
 .chrome-rbac-modal-button {
   padding: 6px 15px;
   margin: 10px;
   cursor: pointer;
+  color: #FF5000;
+  background-color: #fff;
+  border-color: #FF5000;
+  border-radius: 4px;
 }
 .chrome-rbac-modal-tools {
   text-align: right;
