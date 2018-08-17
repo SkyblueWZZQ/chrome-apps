@@ -9,13 +9,7 @@ var showTypeMap = {
 }
 var urls = [];
 var LEVEL = 1;
-var spaceMap = {
-  1: '\n',
-  2: '\n\t',
-  3: '\n\t\t',
-  4: '\n\t\t\t'
-}
-var showButtonType = ['新建', '编辑', '删除', '调整', '审核', '导入', '导出', '下载', '上传', '打印', '审核', '修改']
+// var showButtonType = ['新建', '编辑', '删除', '调整', '审核', '导入', '导出', '下载', '上传', '打印', '审核', '修改']
 
 var toolsWrapper = document.createElement('div');
 toolsWrapper.className = 'chrome-rbac-tools';
@@ -316,13 +310,15 @@ function formatUrl(treeData, level) {
 
     var url = item.path;
     var showType = showTypeMap[item.showType];
-    var space = spaceMap[level];
-
-    for (var n = 0; n < showButtonType.length; n++) {
-      if (name.indexOf(showButtonType[n]) !== -1 && showType === '接口') {
-        name = name + '【按钮】'
-      }
+    var space = '\n';
+    for (var s = 0; s <= level; s++) {
+      space = space + '\t'
     }
+    // for (var n = 0; n < showButtonType.length; n++) {
+    //   if (name.indexOf(showButtonType[n]) !== -1 && showType === '接口') {
+    //     name = name + '【按钮】'
+    //   }
+    // }
 
     var path = `${space}${name}  ${url}（${showType}）`
     if (item.childList.length > 0) {

@@ -22,6 +22,7 @@
   right: 30px;
   width: 600px;
   top: 120px;
+  z-index: 9999999;
 }
 .chrome-rbac-modal .chrome-rbac-textarea {
   display: block;
@@ -31,6 +32,7 @@
   background: #FFF;
   border: 1px solid #FF5000;
   border-radius: 6px;
+  outline: none;
 }
 .chrome-rbac-modal-button {
   padding: 6px 15px;
