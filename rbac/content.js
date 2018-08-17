@@ -37,10 +37,10 @@ document.body.appendChild(modalWrapper);
 
 setTimeout(
   function () {
-    document.querySelector('.ant-tree-child-tree').onclick = function (e) {
+    document.querySelector('.ant-tree-show-line li').onclick = function (e) {
       var selectedContent = e.target.innerHTML;
       if (selectedContent) {
-        selectedContent.match(/【(\d{5})】/);
+        selectedContent.match(/【(\d{1,5})】/);
         nodeId = RegExp.$1;
         document.querySelector('.chrome-rbac-node-id').innerHTML = nodeId;
       }
@@ -136,7 +136,7 @@ var RBAC = {
       res.data = [node];
       formatUrl(res.data, LEVEL);
       // var rbacTreeData = JSON.stringify(urls, null, 4);
-      var rbacTreeData = urls.join('');
+      var rbacTreeData = urls.reverse().join('');
       localStorage.setItem(`export_rbac_tree_${appSource}`, rbacTreeData);
       showModal(rbacTreeData);
     });
@@ -341,10 +341,10 @@ function formatUrl(treeData, level) {
     // }
 
     var path = `${space}${name}  ${url}（${showType}）`
-    urls.push(path);
     if (item.childList.length > 0) {
       formatUrl(item.childList, level + 1)
     }
+    urls.push(path);
   }
 }
 
