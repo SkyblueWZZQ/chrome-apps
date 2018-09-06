@@ -20,6 +20,7 @@ toolsWrapper.innerHTML = `
     <button class="chrome-rbac-button chrome-rbac-export">导出节点</button>
     <button class="chrome-rbac-button chrome-rbac-import">导入</button>
     <button class="chrome-rbac-button chrome-rbac-export-url">导出权限路径</button>
+    <button class="chrome-rbac-button chrome-rbac-check-url">批量检查</button>
   `;
 var modalWrapper = document.createElement('div');
 modalWrapper.style.display = 'none';
@@ -30,8 +31,10 @@ modalWrapper.innerHTML = `
       <button class="chrome-rbac-modal-button chrome-rbac-close">关闭</button>
       <button class="chrome-rbac-modal-button chrome-rbac-copy">复制</button>
       <button class="chrome-rbac-modal-button chrome-rbac-confirm-import">确认导入到选中节点</button>
+      <button class="chrome-rbac-modal-button chrome-rbac-confirm-check">开始检查</button>
     </div>
   `;
+
 document.body.appendChild(toolsWrapper);
 document.body.appendChild(modalWrapper);
 
@@ -62,15 +65,17 @@ setTimeout(
 
 var modalInput = document.querySelector('.chrome-rbac-textarea');
 var importButton = document.querySelector('.chrome-rbac-confirm-import');
+var checkButton = document.querySelector('.chrome-rbac-confirm-check');
 
-function showModal(content = '') {
+function showModal(content = '', type) {
   modalInput.value = content;
   modalWrapper.style.display = '';
-  importButton.style.display = content ? 'none' : '';
+  importButton.style.display = content || type ? 'none' : '';
 }
 function hideModal() {
   modalWrapper.style.display = 'none';
 }
+
 function selectingStyle(e) {
   var selectingNode = e.currentTarget;
   selectingNode.style.background = '#FF5000';
@@ -159,6 +164,19 @@ var RBAC = {
         if (callback) {
           callback();
         }
+      }
+    }).catch(e => alert(`导出异常: ${e}`))
+  },
+  checkUrl() {
+    var newRbacMap = getRbacInputValue();
+    exportRbac(0).then(ret => {
+      var oldRbacMap = rbacTreeToMap(ret);
+      var diffList = newRbacMap.filter(url => Object.keys(oldRbacMap).indexOf(url) === -1);
+      if (diffList.length > 0) {
+        alert(`悲哉！${diffList.length}个url未配权限，结果在右侧输入框中`);
+        modalInput.value = JSON.stringify(diffList, null, 4);
+      } else {
+        alert("乐哉！所有url都已配权限")
       }
     }).catch(e => alert(`导出异常: ${e}`))
   },
@@ -260,6 +278,14 @@ document.querySelector('.chrome-rbac-confirm-import').onclick = function (e) {
     RBAC.import();
   });
 }
+document.querySelector('.chrome-rbac-check-url').onclick = function (e) {
+  selectingStyle(e)
+  showModal('', 'check')
+}
+document.querySelector('.chrome-rbac-confirm-check').onclick = function (e) {
+  selectingStyle(e)
+  RBAC.checkUrl();
+}
 function request(url, data) {
   return fetch(url, {
     headers: {
@@ -301,6 +327,15 @@ function rbacTreeToMap(res) {
 }
 
 function getRbacInputValue() {
+  try {
+    var res = JSON.parse(modalInput.value);
+  } catch (e) {
+    alert(`权限数据解析错误: ${e}`);
+    throw new Error('权限数据解析错误');
+  }
+  return res;
+}
+function getCheckUrls() {
   try {
     var res = JSON.parse(modalInput.value);
   } catch (e) {
