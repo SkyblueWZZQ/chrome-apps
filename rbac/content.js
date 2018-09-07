@@ -14,7 +14,8 @@ var LEVEL = 1;
 var toolsWrapper = document.createElement('div');
 toolsWrapper.className = 'chrome-rbac-tools';
 toolsWrapper.innerHTML = `
-    节点ID: <span class="chrome-rbac-node-id">${nodeId}</span>
+    节点ID: <span class="chrome-rbac-node-id text">${nodeId}</span>
+    节点ID: <span class="chrome-rbac-app-source text">${appSource}</span>
     <button class="chrome-rbac-button chrome-rbac-remove-children">删除子节点</button>
     <button class="chrome-rbac-button chrome-rbac-export-children">导出子节点</button>
     <button class="chrome-rbac-button chrome-rbac-export">导出节点</button>
@@ -38,27 +39,52 @@ modalWrapper.innerHTML = `
 document.body.appendChild(toolsWrapper);
 document.body.appendChild(modalWrapper);
 
+function updateNodeId(id) {
+  nodeId = id;
+  document.querySelector('.chrome-rbac-node-id').innerHTML = nodeId;
+}
+
+function getNodeId() {
+  document.querySelector('.ant-tree-show-line li').onclick = function (e) {
+    var selectedContent = e.target.innerHTML;
+    if (selectedContent) {
+      selectedContent.match(/【(\d{1,5})】/);
+      updateNodeId(RegExp.$1);
+    }
+  }
+}
+function updateAppSource() {
+  updateNodeId(0);
+  appSource = location.pathname.split('/')[2];
+  document.querySelector('.chrome-rbac-app-source').innerHTML = appSource;
+}
+
+function changePage() {
+  document.querySelector('.ant-menu').onclick = function (e) {
+    setTimeout(() => {
+      updateAppSource();
+    }, 500);
+    var selectedMenu = e.target.href;
+    if (selectedMenu) {
+      var path = selectedMenu.split('/').pop();
+      if (path === 'features') {
+        setTimeout(() => {
+          getNodeId();
+        }, 500);
+        toolsWrapper.style.display = 'block';
+      } else {
+        toolsWrapper.style.display = 'none';
+      }
+    }
+  }
+}
+
+
+
 setTimeout(
   function () {
-    document.querySelector('.ant-tree-show-line li').onclick = function (e) {
-      var selectedContent = e.target.innerHTML;
-      if (selectedContent) {
-        selectedContent.match(/【(\d{1,5})】/);
-        nodeId = RegExp.$1;
-        document.querySelector('.chrome-rbac-node-id').innerHTML = nodeId;
-      }
-    }
-    document.querySelector('.ant-menu').onclick = function (e) {
-      var selectedMenu = e.target.href;
-      if (selectedMenu) {
-        var path = selectedMenu.split('/').pop();
-        if (path === 'features') {
-          toolsWrapper.style.display = 'block';
-        } else {
-          toolsWrapper.style.display = 'none';
-        }
-      }
-    }
+    getNodeId();
+    changePage();
   }, 2000);
 
 

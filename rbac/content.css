@@ -51,6 +51,7 @@
 .chrome-rbac-modal-tools {
   text-align: right;
 }
-.chrome-rbac-node-id{
+.text{
   color: #FF5000;
+  padding-right: 20px;
 }
