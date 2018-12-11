@@ -92,6 +92,8 @@ setTimeout(
 var modalInput = document.querySelector('.chrome-rbac-textarea');
 var importButton = document.querySelector('.chrome-rbac-confirm-import');
 var checkButton = document.querySelector('.chrome-rbac-confirm-check');
+var checkUrlButton = document.querySelector('.chrome-rbac-check-url');
+checkButton.style.display = 'none';
 
 function showModal(content = '', type) {
   modalInput.value = content;
@@ -106,6 +108,11 @@ function selectingStyle(e) {
   var selectingNode = e.currentTarget;
   selectingNode.style.background = '#FF5000';
   selectingNode.style.color = '#FFF';
+  if (selectingNode === checkUrlButton) {
+    checkButton.style.display = '';
+  } else {
+    checkButton.style.display = 'none';
+  }
   var buttons = toolsWrapper.querySelectorAll('button');
   for (var b = 0; b < buttons.length; b++) {
     if (buttons[b] != selectingNode) {
