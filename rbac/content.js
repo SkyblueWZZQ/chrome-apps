@@ -15,7 +15,7 @@ var toolsWrapper = document.createElement('div');
 toolsWrapper.className = 'chrome-rbac-tools';
 toolsWrapper.innerHTML = `
     节点ID: <span class="chrome-rbac-node-id text">${nodeId}</span>
-    节点ID: <span class="chrome-rbac-app-source text">${appSource}</span>
+    应用ID: <span class="chrome-rbac-app-source text">${appSource}</span>
     <button class="chrome-rbac-button chrome-rbac-remove-children">删除子节点</button>
     <button class="chrome-rbac-button chrome-rbac-export-children">导出子节点</button>
     <button class="chrome-rbac-button chrome-rbac-export">导出节点</button>
@@ -165,7 +165,9 @@ var RBAC = {
     exportRbac(0).then(res => {
       var node = getRbacNode(res.data);
       res.data = [node];
-      formatUrl(res.data, LEVEL);
+      if (res.data && res.data.length) {
+        formatUrl(res.data, LEVEL);
+      }
       // var rbacTreeData = JSON.stringify(urls, null, 4);
       var rbacTreeData = urls.reverse().join('');
       localStorage.setItem(`export_rbac_tree_${appSource}`, rbacTreeData);
